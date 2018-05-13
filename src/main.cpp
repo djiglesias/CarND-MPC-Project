@@ -8,6 +8,7 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "MPC.h"
 #include "json.hpp"
+#include "Solution.h"
 
 // for convenience
 using json = nlohmann::json;
@@ -106,7 +107,7 @@ int main() {
           {
             // Reference trajectory.
             double n_x = cos(psi) * (ptsx[i] - px) + sin(psi) * (ptsy[i] - py);
-            double n_y = -sin(psi) * (ptsx[i] - px) + cos(psi) * (ptsy[i] - py);            
+            double n_y = -sin(psi) * (ptsx[i] - px) + cos(psi) * (ptsy[i] - py);
             next_x_vals.push_back(n_x);
             next_y_vals.push_back(n_y);
             xvals[i] = n_x;
@@ -125,30 +126,18 @@ int main() {
           // Solve the MPC.
           Eigen::VectorXd state(6);
           state << 0, 0, 0, v, cte, epsi;
-          auto vars = mpc.Solve(state, coeffs);
-          
-          double steer_value;
-          double throttle_value;
-          double steer_angle;
-          steer_value = vars[0]/(deg2rad(25));
-          
-          if (j["throttle"] < 10)
-            throttle_value = 1.0;
-          else
-            throttle_value = vars[1];
-          
-          // std::cout << "Steering: " << steer_value << std::endl;
-          // std::cout << "Throttle: " << throttle_value << std::endl;
-
+          Solution solution = mpc.Solve(state, coeffs);
+          double steer_value = solution.steer/(deg2rad(25));
+          double throttle_value = solution.throttle;
 
           // Update JSON message to simulator.
           json msgJson;
-          msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = throttle_value;
+          msgJson["steering_angle"] = solution.steer/(deg2rad(25));
+          msgJson["throttle"] = solution.throttle;
+          msgJson["mpc_x"] = solution.xvals;
+          msgJson["mpc_y"] = solution.yvals;
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-          msgJson["mpc_x"] = mpc_x_vals;
-          msgJson["mpc_y"] = mpc_y_vals;
 
           /* Print Debug Message */
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";

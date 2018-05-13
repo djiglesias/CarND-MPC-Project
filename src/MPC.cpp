@@ -1,17 +1,16 @@
 #include "MPC.h"
+#include "Solution.h"
 #include <cppad/cppad.hpp>
 #include <cppad/ipopt/solve.hpp>
 #include "Eigen-3.3/Eigen/Core"
 
 using CppAD::AD;
 
-// TODO: Set the timestep length and duration
 size_t N = 10;
 double dt = 0.1;
 
 const double Lf = 2.67;
-
-double ref_v = 70;
+double ref_v = 30;
 
 unsigned int x_start = 0;
 unsigned int y_start = x_start + N;
@@ -22,7 +21,6 @@ unsigned int epsi_start = cte_start + N;
 unsigned int delta_start = epsi_start + N;
 unsigned int a_start = delta_start + N - 1;
 
-
 class FG_eval {
  public:
   // Fitted polynomial coefficients
@@ -32,11 +30,12 @@ class FG_eval {
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars) {
     // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
-    // NOTE: You'll probably go back and forth between this function and
-    // the Solver function below.
 
     // Reset the cost function.
     fg[0] = 0;
+
+
+    // Cost functions for MPC.
 
     // The part of the cost based on the reference state.
     for (unsigned int t = 0; t < N; t++) {
@@ -58,15 +57,6 @@ class FG_eval {
       fg[0] += 10*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
 
-    //
-    // Setup Constraints
-    //
-    // NOTE: In this section you'll setup the model constraints.
-
-    // Initial constraints
-    //
-    // We add 1 to each of the starting indices due to cost being located at
-    // index 0 of `fg`.
     // This bumps up the position of all the other values.
     fg[1 + x_start] = vars[x_start];
     fg[1 + y_start] = vars[y_start];
@@ -93,15 +83,11 @@ class FG_eval {
       AD<double> cte0 = vars[cte_start + t - 1];
       AD<double> epsi0 = vars[epsi_start + t - 1];
 
-
-      // std::cout << "epsi0: " << epsi0 << std::endl;
-
       // Only consider the actuation at time t.
       AD<double> delta0 = vars[delta_start + t - 1];
       AD<double> a0 = vars[a_start + t - 1];
-
       AD<double> delta = vars[delta_start + t - 1];
-      if (t > 1) {   // use previous actuations (to account for latency)
+      if (t > 1) {
         a0 = vars[a_start + t - 2];
         delta = vars[delta_start + t - 2];
       }
@@ -114,12 +100,10 @@ class FG_eval {
       fg[1 + v_start + t] = v1 - (v0 + a0 * dt);
       fg[1 + cte_start + t] = cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
       fg[1 + epsi_start + t] = epsi1 - ((psi0 - psides0) - v0/Lf * delta * dt);
-
     }
-
-
   }
 };
+
 
 //
 // MPC class definition implementation.
@@ -127,7 +111,8 @@ class FG_eval {
 MPC::MPC() {}
 MPC::~MPC() {}
 
-vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
+//vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
+Solution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   bool ok = true;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
@@ -174,7 +159,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   }
 
   // Acceleration/decceleration upper and lower limits.
-  // NOTE: Feel free to change this to something else.
   for (unsigned int i = a_start; i < n_vars; i++) {
     vars_lowerbound[i] = -1.0;
     vars_upperbound[i] = 1.0;
@@ -205,13 +189,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // object that computes objective and constraints
   FG_eval fg_eval(coeffs);
 
-  // std::cout << "coeffs[0]: " << coeffs[0] << std::endl;
-  // std::cout << "coeffs[1]: " << coeffs[1] << std::endl;
-  // std::cout << "coeffs[2]: " << coeffs[2] << std::endl;
-
-  //
-  // NOTE: You don't have to worry about these options
-  //
   // options for IPOPT solver
   std::string options;
   options += "Integer print_level  0\n";
@@ -229,20 +206,16 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
   // Check some of the solution values
   ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
-  cout << "ok " << ok << endl;
+  //std::cout << "Cost " << solution.obj_value << std::endl;
 
-  // Cost
-  auto cost = solution.obj_value;
-  std::cout << "Cost " << cost << std::endl;
+  // Assemble result to return
+  Solution result;
+  result.steer = solution.x[delta_start];
+  result.throttle = solution.x[a_start];
 
-  vector<double> result;
-
-  result.push_back(solution.x[delta_start]);
-  result.push_back(solution.x[a_start]);
-
-  for (int i = 0; i < N-1; i++) {
-    result.push_back(solution.x[x_start + i + 1]);
-    result.push_back(solution.x[y_start + i + 1]);
+  for (unsigned int i = 0; i < N-1; i++) {
+    result.xvals.push_back(solution.x[x_start + i + 1]);
+    result.yvals.push_back(solution.x[y_start + i + 1]);
   }
 
   return result;
