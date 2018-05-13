@@ -96,7 +96,11 @@ calculated and is set by the size of the timestep (dt) and number of iterations 
 to carry out. The trade of is between time and accuracy since a small timestep with
 a large number of iterations would produce a smooth estimate of the path but would
 require more computations while the trade off is not enough data to make an accurate
-prediction from. 
+prediction from. Since I am running this a generic off the shelf laptop (not an Alien
+PC powerhouse), I kept computations small to prevent hanging on calculations. Final 
+values were N = 12 and dt = 0.05 since this provided enough of a look ahead at high speeds
+to handle the corners and anything higher than these resulting in lagging and jumping of
+waypoints (yellow) on the track.
 
 <p align="center">
  <img src="./res/prediction_horizon.png">
@@ -119,7 +123,13 @@ optimization calculations. The results of weighting each cost function can be
 assessed by plotting the steering angle and cross track errors for the beginning
 section of the track.
 
-... what did I doooo!!?!?!?
+A weighting variable was added to each of the cost functions discussed and initially set to 1.0. Similiar to 
+the Twiddle function used in the PID Controller project, these values were adjusted by increasing or decreasing
+their values (> 0.0) in response to the overall system error and stability. The cost functions that were the
+most sensitive resulted in higher weighting factors while those that did not have much affect were left at the
+default values. After tuning, the most influential cost factors were those that penalized initial system error,
+large rates of change, and large actuation requests. This basically resulted in an overdamped system since the
+car can be seen understeering on tight corners.
 
 ## 4. Displaying Trajectories
 With the map waypoints converted to the car coordinate frame and the optimized trajectory
