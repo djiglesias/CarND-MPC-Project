@@ -4,14 +4,22 @@
 #include <cppad/ipopt/solve.hpp>
 #include "Eigen-3.3/Eigen/Core"
 
+#define TUNING_1 10.0     // Reference Velocity
+#define TUNING_2 3000.0   // Euclidean Distance
+#define TUNING_3 150.0    // State Error
+#define TUNING_4 1200.0   // Starting Error
+#define TUNING_5 150.0    // Steering Rate Penalty
+#define TUNING_6 20.0     // Acceleration Rate Penalty
+
 using CppAD::AD;
 
-size_t N = 10;
-double dt = 0.1;
-
+// Simulator parameters.
+size_t N = 12;
+double dt = 0.05;
 const double Lf = 2.67;
-double ref_v = 30;
+double ref_v = 100;
 
+// MPC Indexing Parameters.
 unsigned int x_start = 0;
 unsigned int y_start = x_start + N;
 unsigned int psi_start = y_start + N;
@@ -34,27 +42,28 @@ class FG_eval {
     // Reset the cost function.
     fg[0] = 0;
 
-
-    // Cost functions for MPC.
-
-    // The part of the cost based on the reference state.
+    // Implement Cost Functions.
     for (unsigned int t = 0; t < N; t++) {
-      fg[0] += 3000*CppAD::pow(vars[cte_start + t], 2);
-      fg[0] += 3000*CppAD::pow(vars[epsi_start + t], 2);
-      fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
+
+      // Cost Function 1: Reference Velocity.
+      fg[0] += TUNING_1 * CppAD::pow(vars[v_start + t] - ref_v, 2);
+
+      // Cost Function 2: Initial State Error.
+      fg[0] += TUNING_2 * CppAD::pow(vars[cte_start + t], 2);
+      fg[0] += TUNING_2 * CppAD::pow(vars[epsi_start + t], 2);
     }
 
-    // Minimize the use of actuators.
+    // Cost Function 3: Actuator Response.
     for (unsigned int t = 0; t < N - 1; t++) {
-      fg[0] += CppAD::pow(vars[delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[a_start + t], 2);
-      fg[0] += 700*CppAD::pow(vars[delta_start + t] * vars[v_start+t], 2);
+      fg[0] += TUNING_3 * CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += TUNING_3 * CppAD::pow(vars[a_start + t], 2);
+      fg[0] += TUNING_4 * CppAD::pow(vars[delta_start + t] * vars[v_start+t], 2);
     }
 
     // Minimize the value gap between sequential actuations.
     for (unsigned int t = 0; t < N - 2; t++) {
-      fg[0] += 200*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-      fg[0] += 10*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+      fg[0] += TUNING_5 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += TUNING_6 * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
 
     // This bumps up the position of all the other values.
@@ -213,7 +222,7 @@ Solution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   result.steer = solution.x[delta_start];
   result.throttle = solution.x[a_start];
 
-  for (unsigned int i = 0; i < N-1; i++) {
+  for (unsigned int i = 1; i < N-1; i++) {
     result.xvals.push_back(solution.x[x_start + i + 1]);
     result.yvals.push_back(solution.x[y_start + i + 1]);
   }
