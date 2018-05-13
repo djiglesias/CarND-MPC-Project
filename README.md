@@ -1,5 +1,4 @@
-# CarND-Controls-MPC
-Self-Driving Car Engineer Nanodegree Program
+# Project 5 - Model Predictive Controllers (MPC)
 
 ## 0. Basic Build Instructions
 
@@ -108,9 +107,9 @@ In the real world there is a delay between a requesting a command and the result
 action which is known as latency. For this project we have settled on a latency of
 100ms to simulator how a car would actually respond; for instance an actuator 
 moving a steering wheel or a pedal cannot happen instantaneously due to physics. To
-account for this latency we have...
-
-...
+account for this latency we have to slow the rate of response of our actuators so that
+they do not over correct. Rather, we want an over damped system response to prevent
+the passengers from getting seasick.
 
 ### 3.5 Tuning the MPC
 Now that the MPC is implemented and the car is able to drive (slowly) around the
@@ -120,11 +119,7 @@ optimization calculations. The results of weighting each cost function can be
 assessed by plotting the steering angle and cross track errors for the beginning
 section of the track.
 
-...
-
-<p align="center">
- <img src="./res/***.png">
-</p>
+... what did I doooo!!?!?!?
 
 ## 4. Displaying Trajectories
 With the map waypoints converted to the car coordinate frame and the optimized trajectory
@@ -141,8 +136,3 @@ displayed in green.
 <p align="center">
  <img src="./res/simulator.gif">
 </p>
-
-## 6. Recommendations
-
-- braking cost functions
-- ...
