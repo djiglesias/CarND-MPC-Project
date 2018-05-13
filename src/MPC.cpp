@@ -7,7 +7,7 @@
 #define TUNING_1 10.0     // Reference Velocity
 #define TUNING_2 3000.0   // Euclidean Distance
 #define TUNING_3 150.0    // State Error
-#define TUNING_4 1200.0   // Starting Error
+#define TUNING_4 2000.0   // Starting Error
 #define TUNING_5 150.0    // Steering Rate Penalty
 #define TUNING_6 20.0     // Acceleration Rate Penalty
 
