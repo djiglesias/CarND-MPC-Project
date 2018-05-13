@@ -6,5 +6,4 @@ tags
 
 # Build files.
 *.ogv
-Ipopt-3.12.7/
-build/
+Ipopt-3.12.7
