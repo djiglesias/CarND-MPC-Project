@@ -92,6 +92,8 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double delta = j[1]["steering_angle"];
+          double a = j[1]["throttle"];
 
           /************************************************************
            * Calculate Reference Points
@@ -117,15 +119,28 @@ int main() {
           /************************************************************
           * Calculate Steering Angle & Throttle [-1, 1]
           ***********************************************************/
-
           // Fit a polynomial to the path.
           auto coeffs = polyfit(xvals, yvals, 3);
           double epsi = -atan(coeffs[1]);
           double cte = polyeval(coeffs, 0);
 
-          // Solve the MPC.
+          /************************************************************
+           * Adjust for Latency (Global Frame)
+           ***********************************************************/
+          const double latency_dt = 0.1;
+          const double Lf = 2.67;
+
+	  psi = 0.0;
+          px = v * cos(psi) * latency_dt;
+          py = v * sin(psi) * latency_dt;
+          psi = v * (-delta) / Lf * latency_dt;
+          v += a * latency_dt;
+          cte += v * sin(epsi) * latency_dt;
+          epsi += v * (-delta) / Lf * latency_dt;
+
+          // Add everything to the state
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, v, cte, epsi;
+          state << px, py, psi, v, cte, epsi;
           Solution solution = mpc.Solve(state, coeffs);
 
           // Update JSON message to simulator.
@@ -141,7 +156,7 @@ int main() {
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           //std::cout << msg << std::endl;
 
-          this_thread::sleep_for(chrono::milliseconds(1));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
