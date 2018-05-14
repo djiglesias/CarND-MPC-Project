@@ -8,11 +8,7 @@
 #define TUNING_2 4000.0   // Euclidean Distance
 #define TUNING_3 150.0    // State Error
 #define TUNING_4 2000.0   // Starting Error
-<<<<<<< HEAD
 #define TUNING_5 170.0    // Steering Rate Penalty
-=======
-#define TUNING_5 150.0    // Steering Rate Penalty
->>>>>>> 2534ef0d47997dd733461dfc956e3d436fe60766
 #define TUNING_6 20.0     // Acceleration Rate Penalty
 
 using CppAD::AD;

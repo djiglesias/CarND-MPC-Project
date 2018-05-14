@@ -130,7 +130,7 @@ int main() {
           const double latency_dt = 0.1;
           const double Lf = 2.67;
 
-	  psi = 0.0;
+	        psi = 0.0;
           px = v * cos(psi) * latency_dt;
           py = v * sin(psi) * latency_dt;
           psi = v * (-delta) / Lf * latency_dt;
