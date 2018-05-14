@@ -115,6 +115,19 @@ account for this latency we have to slow the rate of response of our actuators s
 they do not over correct. Rather, we want an over damped system response to prevent
 the passengers from getting seasick.
 
+To adjust for the 100ms delay the state passed to the MPC function should be adjusted
+for the predicted future position of the car rather that its current position. To do
+this just update the state values using the current velocity, steering rate, and 
+throttle rate. Remember to set `psi` = 0 since we are using the car coordinate frame
+and latency_dt should be in seconds.
+
+    $  px = v * cos(psi) * latency_dt;
+    $  py = v * sin(psi) * latency_dt;
+    $  psi = v * (-delta) / Lf * latency_dt;
+    $  v += a * latency_dt;
+    $  cte += v * sin(epsi) * latency_dt;
+    $  epsi += v * (-delta) / Lf * latency_dt;
+
 ### 3.5 Tuning the MPC
 Now that the MPC is implemented and the car is able to drive (slowly) around the
 track, the cost functions can be tuned by applying a weighting factor (>1) to
