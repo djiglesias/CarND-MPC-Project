@@ -1,5 +1,4 @@
-# CarND-Controls-MPC
-Self-Driving Car Engineer Nanodegree Program
+# Project 5 - Model Predictive Controllers (MPC)
 
 ## 0. Basic Build Instructions
 
@@ -97,7 +96,11 @@ calculated and is set by the size of the timestep (dt) and number of iterations 
 to carry out. The trade of is between time and accuracy since a small timestep with
 a large number of iterations would produce a smooth estimate of the path but would
 require more computations while the trade off is not enough data to make an accurate
-prediction from. 
+prediction from. Since I am running this a generic off the shelf laptop (not an Alien
+PC powerhouse), I kept computations small to prevent hanging on calculations. Final 
+values were N = 12 and dt = 0.05 since this provided enough of a look ahead at high speeds
+to handle the corners and anything higher than these resulting in lagging and jumping of
+waypoints (yellow) on the track.
 
 <p align="center">
  <img src="./res/prediction_horizon.png">
@@ -108,9 +111,9 @@ In the real world there is a delay between a requesting a command and the result
 action which is known as latency. For this project we have settled on a latency of
 100ms to simulator how a car would actually respond; for instance an actuator 
 moving a steering wheel or a pedal cannot happen instantaneously due to physics. To
-account for this latency we have...
-
-...
+account for this latency we have to slow the rate of response of our actuators so that
+they do not over correct. Rather, we want an over damped system response to prevent
+the passengers from getting seasick.
 
 ### 3.5 Tuning the MPC
 Now that the MPC is implemented and the car is able to drive (slowly) around the
@@ -120,11 +123,13 @@ optimization calculations. The results of weighting each cost function can be
 assessed by plotting the steering angle and cross track errors for the beginning
 section of the track.
 
-...
-
-<p align="center">
- <img src="./res/***.png">
-</p>
+A weighting variable was added to each of the cost functions discussed and initially set to 1.0. Similiar to 
+the Twiddle function used in the PID Controller project, these values were adjusted by increasing or decreasing
+their values (> 0.0) in response to the overall system error and stability. The cost functions that were the
+most sensitive resulted in higher weighting factors while those that did not have much affect were left at the
+default values. After tuning, the most influential cost factors were those that penalized initial system error,
+large rates of change, and large actuation requests. This basically resulted in an overdamped system since the
+car can be seen understeering on tight corners.
 
 ## 4. Displaying Trajectories
 With the map waypoints converted to the car coordinate frame and the optimized trajectory
@@ -141,8 +146,3 @@ displayed in green.
 <p align="center">
  <img src="./res/simulator.gif">
 </p>
-
-## 6. Recommendations
-
-- braking cost functions
-- ...

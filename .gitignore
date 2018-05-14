@@ -3,3 +3,7 @@ build
 tags
 .editorconfig
 .DS_Store
+
+# Build files.
+*.ogv
+Ipopt-3.12.7
